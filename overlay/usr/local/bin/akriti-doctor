@@ -59,7 +59,7 @@ check_audio() {
 
 check_zram() {
     echo -n "  [Memory] ZRAM Compression: "
-    if lsmod | grep -q zram; then
+    if grep -q "zram" /proc/swaps 2>/dev/null || [[ -d /sys/block/zram0 ]]; then
         echo "✅ ACTIVE (ZSTD compressed RAM swap enabled)"
     else
         echo "ℹ️  Standard SWAP / Inactive"

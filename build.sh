@@ -37,12 +37,10 @@ check_root() {
 }
 
 show_banner() {
-    cat << EOF
-${CLR_COPPER}====================================================================
-  🦎 AKRITI OS (CHAMELEON) — ISO REMASTERING BUILD PIPELINE
-  Bharat Cyberdeck Edition • Ubuntu 24.04 LTS Noble Base • XFCE 4.18
-====================================================================${CLR_RESET}
-EOF
+    echo -e "${CLR_COPPER}====================================================================${CLR_RESET}"
+    echo -e "${CLR_COPPER}  🦎 AKRITI OS (CHAMELEON) — ISO REMASTERING BUILD PIPELINE${CLR_RESET}"
+    echo -e "${CLR_COPPER}  Bharat Cyberdeck Edition • Ubuntu 24.04 LTS Noble Base • XFCE 4.18${CLR_RESET}"
+    echo -e "${CLR_COPPER}====================================================================${CLR_RESET}"
 }
 
 show_help() {

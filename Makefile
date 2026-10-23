@@ -3,18 +3,18 @@
 # Ergonomic targets for building, packaging, and testing Akriti OS ISO images
 # ==============================================================================
 
-SHELL := /usr/bin/env bash
-include config/base.env
+SHELL := bash
 
 .PHONY: all help deps bootstrap chroot squashfs iso test-qemu test-qemu-uefi clean distclean
 
-# Default target
+# Default target executes full pipeline
 all: deps bootstrap chroot squashfs iso
-	@echo -e "$(CLR_GREEN)$(CLR_BOLD)🎉 Full build pipeline completed successfully!$(CLR_RESET)"
-	@echo -e "$(CLR_WHITE)ISO Location: $(OUTPUT_DIR)/$(ISO_FILENAME)$(CLR_RESET)"
+	@echo "🎉 Full build pipeline completed successfully!"
 
 help:
-	@echo -e "$(CLR_COPPER)$(CLR_BOLD)Akriti OS (Chameleon) Build System$(CLR_RESET)"
+	@echo "===================================================================="
+	@echo "  🦎 Akriti OS (Chameleon) Build System"
+	@echo "===================================================================="
 	@echo ""
 	@echo "Available make targets:"
 	@echo "  make deps          - Check and install required host build utilities"
@@ -46,7 +46,8 @@ iso:
 	@sudo ./build.sh iso
 
 test-qemu:
-	@ISO_PATH="$(OUTPUT_DIR)/$(ISO_FILENAME)"; \
+	@source config/base.env && \
+	ISO_PATH="$${OUTPUT_DIR}/$${ISO_FILENAME}"; \
 	if [[ ! -f "$${ISO_PATH}" ]]; then \
 		echo "❌ ISO not found at $${ISO_PATH}. Run 'make iso' first."; \
 		exit 1; \
@@ -64,7 +65,8 @@ test-qemu:
 		-boot d
 
 test-qemu-uefi:
-	@ISO_PATH="$(OUTPUT_DIR)/$(ISO_FILENAME)"; \
+	@source config/base.env && \
+	ISO_PATH="$${OUTPUT_DIR}/$${ISO_FILENAME}"; \
 	if [[ ! -f "$${ISO_PATH}" ]]; then \
 		echo "❌ ISO not found at $${ISO_PATH}. Run 'make iso' first."; \
 		exit 1; \

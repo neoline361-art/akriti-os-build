@@ -6,6 +6,13 @@
 set -euo pipefail
 
 CATALOG_FILE="/usr/share/akriti/packs/catalog.yaml"
+if [[ ! -f "${CATALOG_FILE}" ]]; then
+    if [[ -f "$(dirname "$0")/../../share/akriti/packs/catalog.yaml" ]]; then
+        CATALOG_FILE="$(dirname "$0")/../../share/akriti/packs/catalog.yaml"
+    elif [[ -f "$(dirname "$0")/../share/akriti/packs/catalog.yaml" ]]; then
+        CATALOG_FILE="$(dirname "$0")/../share/akriti/packs/catalog.yaml"
+    fi
+fi
 
 show_help() {
     cat << 'EOF'
@@ -28,9 +35,9 @@ cmd_list() {
         exit 1
     fi
     awk '
-      /^- id:/ { id=$3 }
-      /^[ ]+title_en:/ { sub(/^[ ]+title_en: /,""); title=$0 }
-      /^[ ]+download_size_mb:/ { printf "  • %-24s - %s (~%s MB)\n", id, title, $2 }
+      /^[ ]*- id:/ { id=$NF }
+      /^[ ]+title_en:/ { sub(/^[ ]+title_en: */,""); title=$0; gsub(/"/, "", title) }
+      /^[ ]+download_size_mb:/ { printf "  • %-24s - %s (~%s MB)\n", id, title, $NF }
     ' "${CATALOG_FILE}"
 }
 
