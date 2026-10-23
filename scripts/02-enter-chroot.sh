@@ -26,7 +26,7 @@ mount --bind /dev "${ROOTFS_DIR}/dev"
 mount --bind /dev/pts "${ROOTFS_DIR}/dev/pts"
 mount -t proc proc "${ROOTFS_DIR}/proc"
 mount -t sysfs sysfs "${ROOTFS_DIR}/sys"
-mount --bind /run "${ROOTFS_DIR}/run"
+mount -t tmpfs tmpfs "${ROOTFS_DIR}/run"
 
 cleanup_mounts() {
     echo -e "${CLR_YELLOW}Unmounting virtual filesystems from chroot...${CLR_RESET}"
@@ -39,7 +39,13 @@ cleanup_mounts() {
 trap cleanup_mounts EXIT INT TERM
 
 # 2. Ingest DNS and Host Resolution
-cp -L /etc/resolv.conf "${ROOTFS_DIR}/etc/resolv.conf"
+echo -e "${CLR_CYAN}Setting up chroot DNS resolution...${CLR_RESET}"
+rm -f "${ROOTFS_DIR}/etc/resolv.conf"
+cat <<'EOF' > "${ROOTFS_DIR}/etc/resolv.conf"
+nameserver 1.1.1.1
+nameserver 8.8.8.8
+nameserver 1.0.0.1
+EOF
 
 # 3. Stage Calamares configuration files inside chroot
 mkdir -p "${ROOTFS_DIR}/opt/akriti-build/calamares"
