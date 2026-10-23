@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "project": "Akriti OS (Chameleon)",
+  "version": "1.0.0",
+  "palettes": {
+    "retro-cyberdeck": {
+      "name": "Retro Cyberdeck",
+      "type": "dark",
+      "colors": {
+        "base": "#0B0E17",
+        "surface": "#141926",
+        "surface-elevated": "#1F2338",
+        "primary-accent": "#E27D60",
+        "primary-glow": "#FF8A50",
+        "secondary-accent": "#00A896",
+        "success": "#2ECC71",
+        "warning": "#F39C12",
+        "danger": "#E74C3C",
+        "text-primary": "#F8F5EE",
+        "text-secondary": "#A0A8BA",
+        "border": "#283149",
+        "border-active": "#E27D60"
+      }
+    },
+    "kshatriya": {
+      "name": "Kshatriya",
+      "type": "dark",
+      "colors": {
+        "base": "#050505",
+        "surface": "#121212",
+        "surface-elevated": "#1A1A1A",
+        "primary-accent": "#D4AF37",
+        "primary-glow": "#FFDF00",
+        "secondary-accent": "#8B0000",
+        "success": "#2E7D32",
+        "warning": "#E65100",
+        "danger": "#C62828",
+        "text-primary": "#F8F8F8",
+        "text-secondary": "#CCCCCC",
+        "border": "#2A2A2A",
+        "border-active": "#D4AF37"
+      }
+    },
+    "calm-study": {
+      "name": "Calm Study",
+      "type": "light",
+      "colors": {
+        "base": "#F8F5EE",
+        "surface": "#EFEBE1",
+        "surface-elevated": "#E5E0D4",
+        "primary-accent": "#C85A32",
+        "primary-glow": "#D35400",
+        "secondary-accent": "#27AE60",
+        "success": "#27AE60",
+        "warning": "#D68910",
+        "danger": "#C0392B",
+        "text-primary": "#2A2621",
+        "text-secondary": "#635D55",
+        "border": "#DDD7CA",
+        "border-active": "#C85A32"
+      }
+    },
+    "high-contrast": {
+      "name": "High Contrast",
+      "type": "accessibility",
+      "colors": {
+        "base": "#000000",
+        "surface": "#000000",
+        "surface-elevated": "#1A1A1A",
+        "primary-accent": "#FFD700",
+        "primary-glow": "#FFFF00",
+        "secondary-accent": "#00FFFF",
+        "success": "#00FF00",
+        "warning": "#FFA500",
+        "danger": "#FF0000",
+        "text-primary": "#FFFFFF",
+        "text-secondary": "#FFFF00",
+        "border": "#FFFFFF",
+        "border-active": "#FFD700"
+      }
+    },
+    "terminal-forward": {
+      "name": "Terminal Forward",
+      "type": "minimal",
+      "colors": {
+        "base": "#0A0A0A",
+        "surface": "#111111",
+        "surface-elevated": "#181818",
+        "primary-accent": "#39FF14",
+        "primary-glow": "#00FF00",
+        "secondary-accent": "#FFA500",
+        "success": "#39FF14",
+        "warning": "#FFCC00",
+        "danger": "#FF3333",
+        "text-primary": "#E0E0E0",
+        "text-secondary": "#888888",
+        "border": "#222222",
+        "border-active": "#39FF14"
+      }
+    }
+  },
+  "typography": {
+    "interface": {
+      "font-family": "Noto Sans, Inter, sans-serif",
+      "size-pt": 10
+    },
+    "monospace": {
+      "font-family": "JetBrains Mono, Fira Code, monospace",
+      "size-pt": 10.5
+    },
+    "indic-fallbacks": [
+      "Noto Sans Devanagari",
+      "Noto Sans Tamil",
+      "Noto Sans Telugu",
+      "Noto Sans Bengali",
+      "Noto Sans Kannada",
+      "Lohit Devanagari"
+    ]
+  },
+  "geometry": {
+    "border-radius-px": 6,
+    "border-width-px": 1,
+    "window-control-size-px": 16,
+    "panel-size-px": 28,
+    "touch-target-min-px": 44
+  }
+}

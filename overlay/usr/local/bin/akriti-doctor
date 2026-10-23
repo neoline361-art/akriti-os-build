@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Akriti OS - Akriti Doctor Diagnostic Battery & Automated Self-Healing
+# Probes disk, APT locks, Indic IME, PipeWire audio, and provides instant fixes
+# ==============================================================================
+set -euo pipefail
+
+show_help() {
+    cat << 'EOF'
+🩺 Akriti Doctor (प्रणाली आरोग्य परीक्षक)
+Usage:
+  akriti-doctor                 Run full diagnostic battery
+  akriti-doctor fix disk        Clean APT caches, logs, and free up disk space
+  akriti-doctor fix apt         Clear stale APT lockfiles and repair broken pkgs
+  akriti-doctor fix ime         Restart Fcitx5 multilingual input method engine
+  akriti-doctor fix audio       Restart PipeWire / WirePlumber audio servers
+  akriti-doctor fix all         Run all automated remediation routines
+EOF
+}
+
+check_disk() {
+    echo -n "  [Storage] Free Root Space: "
+    local avail_kb
+    avail_kb=$(df -k / | awk 'NR==2 {print $4}')
+    local avail_mb=$((avail_kb / 1024))
+    if [[ ${avail_mb} -gt 2048 ]]; then
+        echo "✅ OK (${avail_mb} MB available)"
+    else
+        echo "⚠️  LOW (${avail_mb} MB available - run 'akriti-doctor fix disk')"
+    fi
+}
+
+check_apt() {
+    echo -n "  [Packages] APT Lock Status: "
+    if fuser /var/lib/dpkg/lock >/dev/null 2>&1 || fuser /var/lib/apt/lists/lock >/dev/null 2>&1; then
+        echo "⚠️  LOCKED by background process"
+    else
+        echo "✅ OK (No stale locks)"
+    fi
+}
+
+check_ime() {
+    echo -n "  [Indic IME] Fcitx5 Process: "
+    if pgrep -x "fcitx5" >/dev/null; then
+        echo "✅ RUNNING"
+    else
+        echo "⚠️  INACTIVE (run 'akriti-doctor fix ime')"
+    fi
+}
+
+check_audio() {
+    echo -n "  [Audio] PipeWire / WirePlumber: "
+    if pgrep -x "pipewire" >/dev/null; then
+        echo "✅ RUNNING"
+    else
+        echo "⚠️  INACTIVE (run 'akriti-doctor fix audio')"
+    fi
+}
+
+check_zram() {
+    echo -n "  [Memory] ZRAM Compression: "
+    if lsmod | grep -q zram; then
+        echo "✅ ACTIVE (ZSTD compressed RAM swap enabled)"
+    else
+        echo "ℹ️  Standard SWAP / Inactive"
+    fi
+}
+
+fix_disk() {
+    echo "🧹 [Doctor] Reclaiming disk space..."
+    sudo apt-get clean || true
+    sudo journalctl --vacuum-size=50M || true
+    rm -rf "${HOME}/.cache/thumbnails"/* 2>/dev/null || true
+    echo "✨ Disk cleanup completed."
+}
+
+fix_apt() {
+    echo "🔧 [Doctor] Repairing APT locks and interrupted packages..."
+    sudo rm -f /var/lib/apt/lists/lock /var/cache/apt/archives/lock /var/lib/dpkg/lock* || true
+    sudo dpkg --configure -a || true
+    sudo apt-get install -f -y || true
+    echo "✨ APT package manager healed."
+}
+
+fix_ime() {
+    echo "⌨️  [Doctor] Restarting Fcitx5 IME..."
+    killall fcitx5 2>/dev/null || true
+    sleep 0.5
+    fcitx5 -d &
+    echo "✨ Fcitx5 restarted."
+}
+
+fix_audio() {
+    echo "🔊 [Doctor] Restarting PipeWire audio subsystem..."
+    systemctl --user restart pipewire pipewire-pulse wireplumber 2>/dev/null || true
+    echo "✨ Audio services re-initialized."
+}
+
+cmd_status() {
+    echo "=================================================="
+    echo "🦎 Akriti Doctor — System Health Diagnostic Battery"
+    echo "=================================================="
+    check_disk
+    check_apt
+    check_ime
+    check_audio
+    check_zram
+    echo "=================================================="
+}
+
+ACTION="${1:-status}"
+case "${ACTION}" in
+    status)
+        cmd_status
+        ;;
+    fix)
+        SUB="${2:-all}"
+        case "${SUB}" in
+            disk)  fix_disk ;;
+            apt)   fix_apt ;;
+            ime)   fix_ime ;;
+            audio) fix_audio ;;
+            all)
+                fix_disk
+                fix_apt
+                fix_ime
+                fix_audio
+                ;;
+            *)
+                show_help
+                exit 1
+                ;;
+        esac
+        ;;
+    help|--help|-h)
+        show_help
+        ;;
+    *)
+        show_help
+        exit 1
+        ;;
+esac

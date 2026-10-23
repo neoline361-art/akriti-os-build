@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Akriti OS - Bharat Study Packs Offline Package Manager
+# Handles installation of curated educational and maker toolchains
+# ==============================================================================
+set -euo pipefail
+
+CATALOG_FILE="/usr/share/akriti/packs/catalog.yaml"
+
+show_help() {
+    cat << 'EOF'
+📚 Bharat Study Packs Manager (भारत अध्ययन संच)
+Usage:
+  akriti-pack list                      List available study packs
+  akriti-pack info <pack_id>            Show detailed info about a pack
+  akriti-pack install <pack_id>         Install pack dependencies via APT
+  akriti-pack help                      Show this help message
+
+Options:
+  --offline-source=/path/to/repo       Use local media repository pool
+EOF
+}
+
+cmd_list() {
+    echo "📦 [Bharat Study Packs] Available Suites:"
+    if [[ ! -f "${CATALOG_FILE}" ]]; then
+        echo "❌ Catalog not found at ${CATALOG_FILE}"
+        exit 1
+    fi
+    awk '
+      /^- id:/ { id=$3 }
+      /^[ ]+title_en:/ { sub(/^[ ]+title_en: /,""); title=$0 }
+      /^[ ]+download_size_mb:/ { printf "  • %-24s - %s (~%s MB)\n", id, title, $2 }
+    ' "${CATALOG_FILE}"
+}
+
+cmd_info() {
+    local pack_id="${1:-}"
+    if [[ -z "${pack_id}" ]]; then
+        echo "❌ Pack ID required. Run 'akriti-pack list' for options."
+        exit 1
+    fi
+    echo "ℹ️  Details for pack: ${pack_id}"
+    grep -A 10 "id: ${pack_id}" "${CATALOG_FILE}" || echo "Pack ${pack_id} not found."
+}
+
+cmd_install() {
+    local pack_id="${1:-}"
+    if [[ -z "${pack_id}" ]]; then
+        echo "❌ Pack ID required. Run 'akriti-pack list' for options."
+        exit 1
+    fi
+
+    echo "🚀 Installing Bharat Study Pack: ${pack_id}..."
+    local in_pack=false
+    local pkgs=()
+
+    while IFS= read -r line; do
+        if [[ "${line}" =~ ^[[:space:]]*-?[[:space:]]*id:[[:space:]]*${pack_id}$ ]]; then
+            in_pack=true
+            continue
+        elif [[ "${in_pack}" == true && "${line}" =~ ^[[:space:]]*-?[[:space:]]*id: ]]; then
+            break
+        fi
+
+        if [[ "${in_pack}" == true && "${line}" =~ ^[[:space:]]*-?[[:space:]]*packages: ]]; then
+            reading_pkgs=true
+            continue
+        fi
+
+        if [[ "${in_pack}" == true && "${line}" =~ ^[[:space:]]*-[[:space:]]+([a-zA-Z0-9_\-]+) ]]; then
+            pkgs+=("${BASH_REMATCH[1]}")
+        fi
+    done < "${CATALOG_FILE}"
+
+    if [[ ${#pkgs[@]} -eq 0 ]]; then
+        echo "❌ Could not resolve packages for pack: ${pack_id}"
+        exit 1
+    fi
+
+    echo "📦 Target packages: ${pkgs[*]}"
+    sudo apt-get update -y || true
+    sudo apt-get install -y --no-install-recommends "${pkgs[@]}"
+    echo "✨ Pack '${pack_id}' successfully installed!"
+}
+
+ACTION="${1:-list}"
+case "${ACTION}" in
+    list)
+        cmd_list
+        ;;
+    info)
+        shift
+        cmd_info "$@"
+        ;;
+    install)
+        shift
+        cmd_install "$@"
+        ;;
+    help|--help|-h)
+        show_help
+        ;;
+    *)
+        show_help
+        exit 1
+        ;;
+esac

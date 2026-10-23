@@ -1,0 +1,198 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Akriti OS - Chroot Hook 03: XFCE 4.18 Desktop & Sutra Workspaces Configuration
+# Injects Sutra workspaces, panel layout, design tokens, and skel configurations
+# ==============================================================================
+set -euo pipefail
+
+export DEBIAN_FRONTEND=noninteractive
+export LC_ALL=C
+
+echo "🎨 [Hook 03] Configuring Sutra Workspaces and XFCE 4.18 Desktop in /etc/skel..."
+
+SKEL_XFCONF="/etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml"
+mkdir -p "${SKEL_XFCONF}"
+mkdir -p /etc/akriti
+mkdir -p /etc/skel/.config/autostart
+mkdir -p /etc/skel/Pothi/Vidya
+mkdir -p /etc/skel/Pothi/Nirman
+mkdir -p /etc/skel/Pothi/Kosh
+mkdir -p /etc/skel/Pothi/.archive
+mkdir -p /etc/skel/Jugaad/scratch
+mkdir -p /etc/skel/Jugaad/templates
+mkdir -p /etc/skel/Jugaad/.snapshots
+
+# 1. Workspace Configuration (xfwm4.xml)
+# 4 Sutras: Vidya, Nirman, Jugaad, Kosh
+cat << 'EOF' > "${SKEL_XFCONF}/xfwm4.xml"
+<?xml version="1.0" encoding="UTF-8"?>
+<channel name="xfwm4" version="1.0">
+  <property name="general" type="empty">
+    <property name="workspace_count" type="int" value="4"/>
+    <property name="workspace_names" type="array">
+      <value type="string" value="Vidya (विद्या)"/>
+      <value type="string" value="Nirman (निर्माण)"/>
+      <value type="string" value="Jugaad (जुगाड़)"/>
+      <value type="string" value="Kosh (कोश)"/>
+    </property>
+    <property name="theme" type="string" value="Akriti-Cyberdeck"/>
+    <property name="title_font" type="string" value="Noto Sans Bold 9"/>
+    <property name="title_alignment" type="string" value="left"/>
+    <property name="button_layout" type="string" value="O|HMC"/>
+    <property name="box_resize" type="bool" value="false"/>
+    <property name="box_move" type="bool" value="false"/>
+    <property name="double_click_action" type="string" value="maximize"/>
+    <property name="use_compositing" type="bool" value="false"/>
+    <property name="cycle_draw_box" type="bool" value="true"/>
+    <property name="tile_on_move" type="bool" value="true"/>
+    <property name="snap_to_border" type="bool" value="true"/>
+    <property name="snap_to_windows" type="bool" value="true"/>
+  </property>
+</channel>
+EOF
+
+# 2. XSettings Configuration (xsettings.xml)
+cat << 'EOF' > "${SKEL_XFCONF}/xsettings.xml"
+<?xml version="1.0" encoding="UTF-8"?>
+<channel name="xsettings" version="1.0">
+  <property name="Net" type="empty">
+    <property name="ThemeName" type="string" value="Akriti-Cyberdeck"/>
+    <property name="IconThemeName" type="string" value="Papirus-Dark"/>
+    <property name="SoundThemeName" type="string" value="default"/>
+    <property name="EnableEventSounds" type="bool" value="false"/>
+    <property name="EnableInputFeedbackSounds" type="bool" value="false"/>
+  </property>
+  <property name="Gtk" type="empty">
+    <property name="FontName" type="string" value="Noto Sans 10"/>
+    <property name="MonospaceFontName" type="string" value="JetBrains Mono 10.5"/>
+    <property name="CursorThemeName" type="string" value="DMZ-White"/>
+    <property name="CursorThemeSize" type="int" value="24"/>
+    <property name="DecorationLayout" type="string" value="menu:minimize,maximize,close"/>
+  </property>
+  <property name="Xft" type="empty">
+    <property name="DPI" type="int" value="-1"/>
+    <property name="Antialias" type="int" value="1"/>
+    <property name="Hinting" type="int" value="1"/>
+    <property name="HintStyle" type="string" value="hintslight"/>
+    <property name="RGBA" type="string" value="rgb"/>
+  </property>
+</channel>
+EOF
+
+# 3. Panel Configuration (xfce4-panel.xml)
+# 28px panel size, Sutra pager, Tasklist, Systray, IME indicator, Audio, Clock, Action buttons
+cat << 'EOF' > "${SKEL_XFCONF}/xfce4-panel.xml"
+<?xml version="1.0" encoding="UTF-8"?>
+<channel name="xfce4-panel" version="1.0">
+  <property name="configver" type="int" value="2"/>
+  <property name="panels" type="array">
+    <value type="int" value="1"/>
+  </property>
+  <property name="panel-1" type="empty">
+    <property name="position" type="string" value="p=6;x=0;y=0"/>
+    <property name="length" type="uint" value="100"/>
+    <property name="position-locked" type="bool" value="true"/>
+    <property name="size" type="uint" value="28"/>
+    <property name="plugin-ids" type="array">
+      <value type="int" value="1"/>
+      <value type="int" value="2"/>
+      <value type="int" value="3"/>
+      <value type="int" value="4"/>
+      <value type="int" value="5"/>
+      <value type="int" value="6"/>
+      <value type="int" value="7"/>
+      <value type="int" value="8"/>
+      <value type="int" value="9"/>
+    </property>
+  </property>
+  <property name="plugins" type="empty">
+    <property name="plugin-1" type="string" value="whiskermenu"/>
+    <property name="plugin-2" type="string" value="pager">
+      <property name="rows" type="uint" value="1"/>
+      <property name="miniature-view" type="bool" value="false"/>
+    </property>
+    <property name="plugin-3" type="string" value="separator">
+      <property name="style" type="uint" value="0"/>
+    </property>
+    <property name="plugin-4" type="string" value="tasklist">
+      <property name="flat-buttons" type="bool" value="true"/>
+      <property name="show-labels" type="bool" value="true"/>
+      <property name="grouping" type="uint" value="1"/>
+      <property name="include-all-workspaces" type="bool" value="false"/>
+    </property>
+    <property name="plugin-5" type="string" value="separator">
+      <property name="expand" type="bool" value="true"/>
+      <property name="style" type="uint" value="0"/>
+    </property>
+    <property name="plugin-6" type="string" value="systray">
+      <property name="square-icons" type="bool" value="true"/>
+      <property name="known-legacy-items" type="array">
+        <value type="string" value="networkmanager applet"/>
+        <value type="string" value="fcitx5"/>
+      </property>
+    </property>
+    <property name="plugin-7" type="string" value="pulseaudio">
+      <property name="enable-keyboard-shortcuts" type="bool" value="true"/>
+    </property>
+    <property name="plugin-8" type="string" value="clock">
+      <property name="digital-layout" type="uint" value="3"/>
+      <property name="digital-time-format" type="string" value="%H:%M"/>
+      <property name="digital-date-format" type="string" value="%a, %d %b"/>
+    </property>
+    <property name="plugin-9" type="string" value="actions">
+      <property name="items" type="array">
+        <value type="string" value="-lock-screen"/>
+        <value type="string" value="-switch-user"/>
+        <value type="string" value="-separator"/>
+        <value type="string" value="-suspend"/>
+        <value type="string" value="-hibernate"/>
+        <value type="string" value="-hybrid-sleep"/>
+        <value type="string" value="-separator"/>
+        <value type="string" value="-restart"/>
+        <value type="string" value="+shutdown"/>
+        <value type="string" value="-logout"/>
+      </property>
+    </property>
+  </property>
+</channel>
+EOF
+
+# 4. Fcitx5 Autostart in XFCE Session
+cat << 'EOF' > /etc/skel/.config/autostart/fcitx5.desktop
+[Desktop Entry]
+Name=Fcitx 5
+GenericName=Input Method
+Comment=Start Input Method Daemon
+Exec=fcitx5
+Icon=fcitx
+Terminal=false
+Type=Application
+Categories=System;Utility;
+StartupNotify=false
+X-GNOME-Autostart-Phase=Applications
+X-GNOME-AutoRestart=true
+EOF
+
+# 5. Slick Greeter Configuration
+mkdir -p /etc/lightdm
+cat << 'EOF' > /etc/lightdm/slick-greeter.conf
+[Greeter]
+background=/usr/share/akriti/wallpapers/yantra-matrix.svg
+theme-name=Akriti-Cyberdeck
+icon-theme-name=Papirus-Dark
+font-name=Noto Sans 10
+cursor-theme-name=DMZ-White
+draw-user-backgrounds=false
+draw-grid=false
+show-hostname=true
+show-keyboard=true
+show-clock=true
+clock-format=%a, %e %b  %H:%M
+EOF
+
+# Set default lightdm greeter
+if [[ -f /etc/lightdm/lightdm.conf ]]; then
+    sed -i 's/^greeter-session=.*/greeter-session=slick-greeter/' /etc/lightdm/lightdm.conf || true
+fi
+
+echo "✅ [Hook 03] XFCE 4.18 desktop and Sutra workspaces configured in /etc/skel."

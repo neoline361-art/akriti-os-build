@@ -1,0 +1,164 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Akriti OS - Pothi Workspaces Manager (CLI)
+# Usage:
+#   pothi list
+#   pothi create <subject> <project_name> [--template=math|science|coding|notes]
+#   pothi archive <subject> <project_name>
+# ==============================================================================
+set -euo pipefail
+
+POTHI_ROOT="${HOME}/Pothi"
+ARCHIVE_ROOT="${POTHI_ROOT}/.archive"
+
+mkdir -p "${POTHI_ROOT}" "${ARCHIVE_ROOT}"
+
+show_help() {
+    cat << EOF
+📖 Pothi Workspaces Manager (पोथी कार्यस्थान)
+Usage:
+  pothi list                          List all active projects across subjects
+  pothi create <subject> <name>       Create a new structured project
+  pothi archive <subject> <name>      Archive a completed project to .tar.zst
+  pothi help                          Show this help message
+
+Options for 'create':
+  --template=[math|science|coding|notes] (default: notes)
+EOF
+}
+
+cmd_list() {
+    echo "📚 [Pothi] Active Workspaces in ${POTHI_ROOT}:"
+    if [[ ! -d "${POTHI_ROOT}" ]]; then
+        echo "  (No workspaces found)"
+        return
+    fi
+    find "${POTHI_ROOT}" -maxdepth 2 -mindepth 1 -type d ! -path "*/.*" | while read -r dir; do
+        rel="${dir#$POTHI_ROOT/}"
+        if [[ "${rel}" == *"/"* ]]; then
+            echo "  📁 ${rel}"
+        else
+            echo "📂 Subject: [${rel}]"
+        fi
+    done
+}
+
+cmd_create() {
+    local subject="${1:-}"
+    local project="${2:-}"
+    local template="notes"
+
+    for arg in "$@"; do
+        if [[ "${arg}" == --template=* ]]; then
+            template="${arg#*=}"
+        fi
+    done
+
+    if [[ -z "${subject}" || -z "${project}" ]]; then
+        echo "❌ Error: Subject and Project name required."
+        echo "Example: pothi create Mathematics Calculus-1 --template=math"
+        exit 1
+    fi
+
+    local target_dir="${POTHI_ROOT}/${subject}/${project}"
+    if [[ -d "${target_dir}" ]]; then
+        echo "⚠️ Project already exists at: ${target_dir}"
+        exit 1
+    fi
+
+    mkdir -p "${target_dir}"
+    cat << EOF > "${target_dir}/pothi.yaml"
+# Pothi Project Manifest
+version: "1.0"
+title: "${project}"
+subject: "${subject}"
+template: "${template}"
+created_at: "$(date -Iseconds)"
+EOF
+
+    case "${template}" in
+        math)
+            cat << 'EOF' > "${target_dir}/notes.md"
+# गणित (Mathematics) - Notes & Problems
+## Key Formulas & Theorems
+- $\sum_{i=1}^n i = \frac{n(n+1)}{2}$
+
+## Exercises:
+1. 
+EOF
+            ;;
+        coding)
+            mkdir -p "${target_dir}/src"
+            cat << 'EOF' > "${target_dir}/src/main.py"
+def main():
+    print("Project initialized in Pothi Coding Workspace.")
+
+if __name__ == "__main__":
+    main()
+EOF
+            ;;
+        science)
+            cat << 'EOF' > "${target_dir}/lab_report.md"
+# विज्ञान (Science) - Lab Experiment
+## Objective:
+## Hypothesis:
+## Observations:
+## Conclusion:
+EOF
+            ;;
+        *)
+            cat << 'EOF' > "${target_dir}/notes.md"
+# Study Notes
+## Topic Overview:
+- Point 1
+- Point 2
+EOF
+            ;;
+    esac
+
+    echo "✨ Successfully created Pothi project at: ${target_dir}"
+}
+
+cmd_archive() {
+    local subject="${1:-}"
+    local project="${2:-}"
+
+    if [[ -z "${subject}" || -z "${project}" ]]; then
+        echo "❌ Error: Subject and Project name required."
+        echo "Example: pothi archive Mathematics Calculus-1"
+        exit 1
+    fi
+
+    local target_dir="${POTHI_ROOT}/${subject}/${project}"
+    if [[ ! -d "${target_dir}" ]]; then
+        echo "❌ Project directory not found: ${target_dir}"
+        exit 1
+    fi
+
+    local archive_file="${ARCHIVE_ROOT}/${subject}_${project}_$(date +%Y%m%d%H%M%S).tar.zst"
+    tar -C "${POTHI_ROOT}/${subject}" -c "${project}" | zstd -15 -o "${archive_file}"
+    rm -rf "${target_dir}"
+
+    echo "📦 Project archived successfully to: ${archive_file}"
+}
+
+case "${1:-list}" in
+    list)
+        cmd_list
+        ;;
+    create)
+        shift
+        cmd_create "$@"
+        ;;
+    archive)
+        shift
+        cmd_archive "$@"
+        ;;
+    help|--help|-h)
+        show_help
+        ;;
+    *)
+        show_help
+        exit 1
+        ;;
+esac

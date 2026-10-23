@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Akriti OS - Chroot Hook 02: Core Stack & Dependency Installation
+# Installs Calamares installer, Fcitx5 IME, Indic fonts, Python GTK4 bindings
+# ==============================================================================
+set -euo pipefail
+
+export DEBIAN_FRONTEND=noninteractive
+export LC_ALL=C
+
+echo "🔄 [Hook 02] Updating APT package repositories..."
+apt-get update -y
+
+echo "📦 [Hook 02] Installing Calamares system installer..."
+apt-get install -y --no-install-recommends \
+    calamares \
+    calamares-settings-ubuntu || true
+
+echo "⌨️  [Hook 02] Installing Fcitx5 Multilingual IME Stack..."
+apt-get install -y --no-install-recommends \
+    fcitx5 \
+    fcitx5-m17n \
+    fcitx5-frontend-gtk3 \
+    fcitx5-frontend-gtk4 \
+    fcitx5-frontend-qt5 \
+    fcitx5-config-qt
+
+# Configure system-wide input method environment
+cat << 'EOF' >> /etc/environment
+GTK_IM_MODULE=fcitx
+QT_IM_MODULE=fcitx
+XMODIFIERS=@im=fcitx
+INPUT_METHOD=fcitx
+EOF
+
+echo "🔤 [Hook 02] Installing Indic & Typography Fonts..."
+apt-get install -y --no-install-recommends \
+    fonts-noto-core \
+    fonts-noto-ui-core \
+    fonts-lohit-deva \
+    fonts-lohit-tamnl \
+    fonts-lohit-telu \
+    fonts-lohit-beng \
+    fonts-lohit-knda \
+    fonts-lohit-gujr \
+    fonts-jetbrains-mono \
+    fonts-inter || true
+
+# Refresh font cache
+fc-cache -fv || true
+
+echo "🐍 [Hook 02] Installing Python 3, PyGObject GTK4 & Libadwaita stack..."
+apt-get install -y --no-install-recommends \
+    python3 \
+    python3-pip \
+    python3-gi \
+    python3-gi-cairo \
+    gir1.2-gtk-4.0 \
+    gir1.2-adw-1 \
+    libadwaita-1-0 \
+    python3-yaml \
+    python3-psutil
+
+echo "🛡️  [Hook 02] Installing Sandboxing & Memory Utilities..."
+apt-get install -y --no-install-recommends \
+    bubblewrap \
+    zram-tools \
+    zstd \
+    papirus-icon-theme
+
+# Setup Calamares configuration directories and copy custom modules
+echo "🔧 [Hook 02] Linking custom Calamares branding and post-install module..."
+mkdir -p /etc/calamares/modules /etc/calamares/branding
+if [[ -d "/opt/akriti-build/calamares" ]]; then
+    cp -rf /opt/akriti-build/calamares/settings.conf /etc/calamares/settings.conf || true
+    cp -rf /opt/akriti-build/calamares/modules/* /etc/calamares/modules/ || true
+    cp -rf /opt/akriti-build/calamares/branding/* /etc/calamares/branding/ || true
+fi
+
+echo "✅ [Hook 02] Core stack and dependencies installed successfully."

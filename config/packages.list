@@ -1,0 +1,105 @@
+# ==============================================================================
+# Akriti OS (Chameleon) - Curated Package Manifest
+# Foundation: Ubuntu 24.04 LTS / Linux Lite 7.0 Base
+# ==============================================================================
+
+# Core X.Org Server and Drivers
+xorg
+xserver-xorg-core
+xserver-xorg-video-all
+xserver-xorg-input-all
+mesa-va-drivers
+intel-media-va-driver
+mesa-vulkan-drivers
+
+# Display Manager & Greeter
+lightdm
+slick-greeter
+lightdm-settings
+
+# XFCE 4.18 Desktop Environment Stack
+xfce4
+xfce4-panel
+xfwm4
+thunar
+xfce4-session
+xfce4-settings
+xfce4-power-manager
+xfce4-terminal
+xfce4-whiskermenu-plugin
+xfce4-pulseaudio-plugin
+xfce4-screenshooter
+thunar-archive-plugin
+picom
+
+# Modern Audio Architecture (PipeWire replaces PulseAudio)
+pipewire
+wireplumber
+pipewire-pulse
+pipewire-alsa
+pavucontrol
+
+# Networking & Connectivity
+network-manager
+network-manager-gnome
+wireless-tools
+wpasupplicant
+
+# Multilingual IME (Fcitx5: saves ~24MB RAM vs IBus, native InScript & Phonetic)
+fcitx5
+fcitx5-m17n
+fcitx5-frontend-gtk3
+fcitx5-frontend-gtk4
+fcitx5-config-qt
+
+# Typography & Indic Script Stack (Lohit + Noto)
+fonts-noto-core
+fonts-noto-ui-core
+fonts-lohit-deva
+fonts-lohit-tamnl
+fonts-lohit-telu
+fonts-lohit-beng
+fonts-lohit-knda
+fonts-lohit-gujr
+fonts-jetbrains-mono
+fonts-inter
+
+# Python 3.11+ GTK4 & Libadwaita Runtime Stack
+python3
+python3-pip
+python3-gi
+python3-gi-cairo
+gir1.2-gtk-4.0
+gir1.2-adw-1
+libadwaita-1-0
+python3-yaml
+python3-psutil
+
+# Calamares Modern System Installer
+calamares
+calamares-settings-ubuntu
+
+# Low-Memory Acceleration & Sandboxing
+zram-tools
+zstd
+bubblewrap
+
+# Live Session Environment & Boot Components
+casper
+lupin-casper
+user-setup
+sudo
+curl
+wget
+nano
+htop
+neofetch
+papirus-icon-theme
+ca-certificates
+
+# Kernel & Hardware Firmware
+linux-generic-hwe-24.04
+linux-firmware
+intel-microcode
+amd64-microcode
+bcmwl-kernel-source

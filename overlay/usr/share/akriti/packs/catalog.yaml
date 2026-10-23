@@ -1,0 +1,59 @@
+# ==============================================================================
+# Akriti OS - Bharat Study Packs Offline Catalog
+# ==============================================================================
+version: "1.0"
+repository: "https://repo.akritios.org/packs"
+packs:
+  - id: code-foundations
+    title_en: "Code Foundations & Engineering Studio"
+    title_hi: "कोड निर्माण और इंजीनियरिंग स्टूडियो"
+    category: "Development"
+    description: "Python 3, Thonny IDE, VSCodium, Scratch 3, and Git."
+    download_size_mb: 280
+    installed_size_mb: 650
+    packages:
+      - python3-venv
+      - thonny
+      - git
+      - build-essential
+      - gdb
+
+  - id: math-science-explorer
+    title_en: "Mathematics & Science Discovery Suite"
+    title_hi: "गणित एवं विज्ञान अन्वेषण संच"
+    category: "Science"
+    description: "Interactive geometry, astronomy, chemistry, and physics simulations."
+    download_size_mb: 320
+    installed_size_mb: 780
+    packages:
+      - geogebra
+      - stellarium
+      - avogadro
+      - kalzium
+
+  - id: indic-typing-studio
+    title_en: "Indic Multilingual Typing Studio"
+    title_hi: "भारतीय बहुभाषी टंकण कार्यशाला"
+    category: "Education"
+    description: "InScript typing tutors, Indic OCR tools, and extended regional fonts."
+    download_size_mb: 85
+    installed_size_mb: 190
+    packages:
+      - fcitx5-m17n
+      - tesseract-ocr-hin
+      - tesseract-ocr-tam
+      - tesseract-ocr-tel
+      - tesseract-ocr-ben
+
+  - id: electronics-maker
+    title_en: "Electronics & Robotics Maker Lab"
+    title_hi: "इलेक्ट्रॉनिक्स और रोबोटिक्स प्रयोगशाला"
+    category: "Hardware"
+    description: "Schematic capture, PCB design, microcontroller flashing, and serial monitors."
+    download_size_mb: 410
+    installed_size_mb: 980
+    packages:
+      - arduino
+      - kicad
+      - minicom
+      - esptool

@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Akriti OS - Chroot Hook 01: Metapackage Safety & Bloat Stripping
+# Prevents APT AutoRemove cascade and cleanly strips extraneous packages
+# ==============================================================================
+set -euo pipefail
+
+export DEBIAN_FRONTEND=noninteractive
+export LC_ALL=C
+
+echo "🛡️  [Hook 01] Marking core desktop packages as manual (Anti-Cascade Protection)..."
+# Protect Xorg, XFCE core, LightDM, NetworkManager, and PipeWire stack
+apt-mark manual \
+    xorg \
+    xserver-xorg-core \
+    xfce4 \
+    xfce4-panel \
+    xfwm4 \
+    thunar \
+    xfce4-session \
+    xfce4-settings \
+    xfce4-power-manager \
+    xfce4-terminal \
+    lightdm \
+    slick-greeter \
+    network-manager \
+    network-manager-gnome \
+    pipewire \
+    wireplumber \
+    sudo \
+    casper || true
+
+echo "🧹 [Hook 01] Purging upstream Linux Lite specific packages..."
+LITE_PACKAGES=(
+    lite-welcome
+    lite-software
+    lite-upgrade-series
+    lite-tweaks
+    lite-manual
+    lite-user-manager
+    lite-themes
+    lite-icons
+    lite-sounds
+    lite-desktop-widgets
+    lite-updates
+    lite-system-report
+    lite-fixes
+    lite-sources
+    lite-info
+)
+
+for pkg in "${LITE_PACKAGES[@]}"; do
+    if dpkg -l "${pkg}" >/dev/null 2>&1; then
+        apt-get purge -y "${pkg}" || true
+    fi
+done
+
+echo "🧼 [Hook 01] Cleaning stale Linux Lite APT preferences and repository signatures..."
+rm -f /etc/apt/preferences.d/linuxlite*
+rm -f /etc/apt/trusted.gpg.d/linuxlite*
+rm -f /etc/apt/sources.list.d/linuxlite*
+
+echo "📦 [Hook 01] Purging heavy default applications (delegated to Bharat Study Packs)..."
+HEAVY_PACKAGES=(
+    "libreoffice-*"
+    "thunderbird*"
+    "vlc*"
+    simple-scan
+    aisleriot
+    gnome-mines
+    gnome-sudoku
+    timeshift
+    "dropbox*"
+    "steam*"
+)
+
+for pattern in "${HEAVY_PACKAGES[@]}"; do
+    apt-get purge -y ${pattern} || true
+done
+
+echo "🔄 [Hook 01] Running autoremove with purge..."
+apt-get autoremove --purge -y
+
+echo "✅ [Hook 01] Metapackage safety and bloat stripping complete."

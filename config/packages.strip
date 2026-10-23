@@ -1,0 +1,39 @@
+# ==============================================================================
+# Akriti OS (Chameleon) - Package Stripping Manifest
+# Packages purged from upstream base to remove bloat and reclaim RAM/disk
+# ==============================================================================
+
+# Linux Lite Bespoke Utilities (replaced by Akriti native suite)
+lite-welcome
+lite-software
+lite-upgrade-series
+lite-tweaks
+lite-manual
+lite-user-manager
+lite-themes
+lite-icons
+lite-sounds
+lite-desktop-widgets
+lite-updates
+lite-system-report
+lite-fixes
+lite-sources
+lite-info
+
+# Heavy Applications (moved to optional offline Bharat Study Packs)
+libreoffice-calc
+libreoffice-core
+libreoffice-draw
+libreoffice-impress
+libreoffice-math
+libreoffice-writer
+thunderbird
+vlc
+vlc-plugin-base
+simple-scan
+aisleriot
+gnome-mines
+gnome-sudoku
+timeshift
+dropbox
+steam

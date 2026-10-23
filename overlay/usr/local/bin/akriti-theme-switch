@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Akriti OS (Chameleon) - Atomic Live Theme Switcher
+# Usage: akriti-theme-switch [retro-cyberdeck|calm-study|high-contrast|terminal-forward|kshatriya]
+# ==============================================================================
+set -euo pipefail
+
+THEME="${1:-retro-cyberdeck}"
+TOKENS_FILE="/etc/akriti/design-tokens.json"
+USER_CONFIG="${HOME}/.config/akriti/active-theme"
+
+if [[ ! -f "${TOKENS_FILE}" ]]; then
+    # Fallback to local dev tokens if not running on rootfs
+    TOKENS_FILE="$(dirname "$0")/../config/design-tokens.json"
+fi
+
+echo "🦎 [Chameleon] Activating theme skin: ${THEME}..."
+
+case "${THEME}" in
+    retro-cyberdeck)
+        GTK_THEME="Akriti-Cyberdeck"
+        ICON_THEME="Papirus-Dark"
+        WM_THEME="Akriti-Cyberdeck"
+        WALLPAPER="/usr/share/akriti/wallpapers/yantra-matrix.svg"
+        FONT_NAME="Noto Sans 10"
+        MONO_FONT="JetBrains Mono 10.5"
+        ;;
+    kshatriya)
+        GTK_THEME="Akriti-Kshatriya"
+        ICON_THEME="Papirus-Dark"
+        WM_THEME="Akriti-Kshatriya"
+        WALLPAPER="/usr/share/akriti/wallpapers/kshatriya-obsidian.svg"
+        FONT_NAME="Noto Sans 10"
+        MONO_FONT="JetBrains Mono 10.5"
+        ;;
+    calm-study)
+        GTK_THEME="Akriti-Parchment"
+        ICON_THEME="Papirus-Light"
+        WM_THEME="Akriti-Parchment"
+        WALLPAPER="/usr/share/akriti/wallpapers/kagaz-nilgiri.svg"
+        FONT_NAME="Noto Sans 10.5"
+        MONO_FONT="JetBrains Mono 10"
+        ;;
+    high-contrast)
+        GTK_THEME="HighContrast"
+        ICON_THEME="Papirus"
+        WM_THEME="Akriti-HighContrast"
+        WALLPAPER=""
+        FONT_NAME="Noto Sans Bold 11"
+        MONO_FONT="JetBrains Mono Bold 11"
+        ;;
+    terminal-forward)
+        GTK_THEME="Akriti-Terminal"
+        ICON_THEME="Papirus-Dark"
+        WM_THEME="Akriti-Terminal"
+        WALLPAPER=""
+        FONT_NAME="JetBrains Mono 10"
+        MONO_FONT="JetBrains Mono 10.5"
+        ;;
+    *)
+        echo "❌ Unknown theme: ${THEME}"
+        echo "Available: retro-cyberdeck, kshatriya, calm-study, high-contrast, terminal-forward"
+        exit 1
+        ;;
+esac
+
+# 1. Update XFCE settings if xfconf-query is present
+if command -v xfconf-query >/dev/null 2>&1; then
+    xfconf-query -c xsettings -p /Net/ThemeName -s "${GTK_THEME}" || true
+    xfconf-query -c xsettings -p /Net/IconThemeName -s "${ICON_THEME}" || true
+    xfconf-query -c xfwm4 -p /general/theme -s "${WM_THEME}" || true
+    xfconf-query -c xsettings -p /Gtk/FontName -s "${FONT_NAME}" || true
+    xfconf-query -c xsettings -p /Gtk/MonospaceFontName -s "${MONO_FONT}" || true
+
+    # Update wallpaper if set and file exists
+    if [[ -n "${WALLPAPER}" && -f "${WALLPAPER}" ]]; then
+        for prop in $(xfconf-query -c xfce4-desktop -l | grep "last-image"); do
+            xfconf-query -c xfce4-desktop -p "${prop}" -s "${WALLPAPER}" || true
+        done
+    fi
+fi
+
+# 2. Persist active selection
+mkdir -p "$(dirname "${USER_CONFIG}")"
+echo "${THEME}" > "${USER_CONFIG}"
+
+echo "✨ Theme '${THEME}' applied successfully!"

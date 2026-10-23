@@ -1,0 +1,7 @@
+# ==============================================================================
+# Akriti OS - ZRAM In-Memory Compressed Swap (zram-tools)
+# Allocates 150% of physical RAM as ultra-fast compressed zram swap
+# ==============================================================================
+ALGO=zstd
+PERCENT=150
+PRIORITY=100

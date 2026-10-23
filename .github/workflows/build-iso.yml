@@ -1,0 +1,97 @@
+name: Build Akriti OS Bootable Hybrid ISO
+
+on:
+  push:
+    branches: [ master, main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ master, main ]
+  workflow_dispatch:
+    inputs:
+      build_mode:
+        description: 'Build Compression Mode (dev = fast ZSTD-15, prod = max ZSTD-19)'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - prod
+
+jobs:
+  build-iso:
+    name: Build & Package Hybrid ISO
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Free Runner Disk Space
+        run: |
+          echo "Reclaiming disk space on GitHub Actions runner..."
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache
+          sudo docker system prune -af || true
+          df -h
+
+      - name: Install Host Build Dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y --no-install-recommends \
+            xorriso \
+            squashfs-tools \
+            mtools \
+            dosfstools \
+            zstd \
+            rsync \
+            curl \
+            isolinux \
+            syslinux-utils \
+            qemu-utils
+
+      - name: Verify Environment & Scripts
+        run: |
+          chmod +x build.sh scripts/*.sh hooks/*.chroot config/calamares/modules/*.py
+          ./build.sh help
+
+      - name: Execute Akriti OS Build Pipeline
+        env:
+          BUILD_MODE: ${{ inputs.build_mode || 'dev' }}
+        run: |
+          echo "Starting master ISO remastering build (Mode: ${BUILD_MODE})..."
+          sudo BUILD_MODE="${BUILD_MODE}" ./build.sh all
+
+      - name: Validate Output Artifacts
+        run: |
+          ls -lh build/output/
+          cat build/output/*.sha256
+          ISO_FILE=$(ls build/output/*.iso | head -n 1)
+          if [[ ! -s "${ISO_FILE}" ]]; then
+            echo "❌ Build failed: ISO file is missing or zero bytes!" >&2
+            exit 1
+          fi
+          echo "✅ ISO generated successfully: ${ISO_FILE}"
+
+      - name: Upload ISO & Checksums
+        uses: actions/upload-artifact@v4
+        with:
+          name: akriti-os-chameleon-${{ github.sha }}
+          path: |
+            build/output/*.iso
+            build/output/*.sha256
+          retention-days: 14
+
+      - name: Upload to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            build/output/*.iso
+            build/output/*.sha256
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

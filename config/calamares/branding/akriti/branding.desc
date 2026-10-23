@@ -1,0 +1,35 @@
+# ==============================================================================
+# Akriti OS - Calamares Branding Descriptor
+# Hardened 780x500px geometry for low-res netbooks (1024x600 TN screens)
+# Bharat Cyberdeck Palette (Obsidian / Saffron Copper / Peacock Cyan)
+# ==============================================================================
+---
+componentName: akriti
+welcomeStyleCalamares: false
+welcomeExpandingLogo: true
+windowExpanding: normal
+windowSize: 780px,500px
+windowPlacement: center
+
+strings:
+    productName:         Akriti OS
+    version:             1.0.0 (Chameleon)
+    shortProductName:    Akriti
+    versionedName:       Akriti OS 1.0.0 (Chameleon)
+    shortVersionedName:  Akriti 1.0
+    bootloaderEntryName: Akriti OS
+    productUrl:          https://akritios.org
+    supportUrl:          https://akritios.org/support
+    knownIssuesUrl:      https://akritios.org/issues
+    releaseNotesUrl:     https://akritios.org/notes
+
+images:
+    productLogo:         "akriti-logo.png"
+    productIcon:         "akriti-icon.png"
+    productWelcome:      "welcome.png"
+
+style:
+   SidebarBackground:    "#141926"
+   SidebarText:          "#F8F5EE"
+   SidebarTextSelect:    "#E27D60"
+   SidebarTextHighlight: "#00A896"

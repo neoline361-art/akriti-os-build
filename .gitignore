@@ -1,0 +1,14 @@
+# Build Artifacts & Mountpoints
+build/
+cache/
+*.iso
+*.iso.sha256
+*.squashfs
+
+# Temporary files
+*.tmp
+*.log
+.DS_Store
+*~
+__pycache__/
+*.pyc

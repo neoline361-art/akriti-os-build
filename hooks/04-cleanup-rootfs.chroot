@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Akriti OS - Chroot Hook 04: RootFS Sanitization & Cleanup
+# Purges package caches, truncates system logs, and resets machine identifiers
+# ==============================================================================
+set -euo pipefail
+
+export DEBIAN_FRONTEND=noninteractive
+export LC_ALL=C
+
+echo "🧹 [Hook 04] Purging APT package caches and lists..."
+apt-get autoremove --purge -y || true
+apt-get clean || true
+rm -rf /var/lib/apt/lists/*
+rm -rf /tmp/* /var/tmp/*
+
+echo "🪵 [Hook 04] Truncating system log files..."
+if [[ -d /var/log ]]; then
+    find /var/log -type f -exec truncate -s 0 {} + || true
+    rm -f /var/log/*.gz /var/log/*.[0-9] /var/log/*-???????? || true
+fi
+
+echo "🆔 [Hook 04] Resetting system machine-id..."
+rm -f /etc/machine-id /var/lib/dbus/machine-id
+touch /etc/machine-id
+
+echo "🧼 [Hook 04] Sanitizing temporary network resolv.conf and host keys..."
+rm -f /etc/resolv.conf
+# Ensure systemd-resolved link or clean resolv.conf stub is restored
+ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf || touch /etc/resolv.conf
+
+# Remove SSH host keys so target machine generates fresh keys on first boot
+rm -f /etc/ssh/ssh_host_* || true
+
+# Remove bash histories and crash dumps
+rm -f /root/.bash_history
+rm -f /home/*/.bash_history || true
+rm -rf /var/crash/*
+
+echo "✅ [Hook 04] RootFS sanitization and cleanup complete."

@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Akriti OS - Jugaad Bench & Bubblewrap Sandbox Runner
+# Safe scratchpad environment that shields credentials while allowing free tests
+# ==============================================================================
+set -euo pipefail
+
+JUGAAD_ROOT="${HOME}/Jugaad"
+SCRATCH_DIR="${JUGAAD_ROOT}/scratch"
+SNAPSHOT_DIR="${JUGAAD_ROOT}/.snapshots"
+
+mkdir -p "${SCRATCH_DIR}" "${SNAPSHOT_DIR}"
+
+show_help() {
+    cat << EOF
+🛠️ Jugaad Bench (जुगाड़ मंच) - Sandbox Environment
+Usage:
+  jugaad launch [python|c|web|bash]   Launch an isolated sandbox session
+  jugaad reset                        Snapshot and cleanly reset scratch directory
+  jugaad snapshots                    List available historical snapshots
+  jugaad help                         Show this help message
+EOF
+}
+
+cmd_reset() {
+    echo "📸 Taking differential snapshot before scratch reset..."
+    local snap_file="${SNAPSHOT_DIR}/scratch_snap_$(date +%Y%m%d_%H%M%S).tar.zst"
+    if [[ -d "${SCRATCH_DIR}" ]] && [ "$(ls -A "${SCRATCH_DIR}")" ]; then
+        tar -C "${JUGAAD_ROOT}" -c "scratch" | zstd -10 -o "${snap_file}"
+        echo "💾 Snapshot saved: ${snap_file}"
+        # Keep only the last 5 snapshots
+        ls -t "${SNAPSHOT_DIR}"/scratch_snap_*.tar.zst 2>/dev/null | tail -n +6 | xargs -r rm -f
+    fi
+    rm -rf "${SCRATCH_DIR}"
+    mkdir -p "${SCRATCH_DIR}"
+    echo "✨ Jugaad scratchpad reset to a pristine state."
+}
+
+cmd_snapshots() {
+    echo "🗄️ Historical Jugaad Snapshots:"
+    ls -lh "${SNAPSHOT_DIR}"/scratch_snap_*.tar.zst 2>/dev/null || echo "  (No snapshots found)"
+}
+
+cmd_launch() {
+    local target="${1:-bash}"
+
+    if ! command -v bwrap >/dev/null 2>&1; then
+        echo "⚠️  bubblewrap (bwrap) not installed. Running in unisolated mode inside ${SCRATCH_DIR}."
+        cd "${SCRATCH_DIR}"
+        exec "${SHELL:-/bin/bash}"
+    fi
+
+    echo "🛡️  Spawning secure Bubblewrap sandbox for: ${target}..."
+    echo "   [Masking ~/.ssh, ~/.gnupg, ~/Pothi from sandbox]"
+
+    cd "${SCRATCH_DIR}"
+
+    # Build Bubblewrap isolation arguments
+    # Mount system read-only, mount /tmp, dev, proc
+    # Mount home directory but mask ~/.ssh, ~/.gnupg, ~/Pothi with empty tmpfs
+    BWRAP_ARGS=(
+        --ro-bind / /
+        --dev /dev
+        --proc /proc
+        --tmpfs /tmp
+        --bind "${SCRATCH_DIR}" "${SCRATCH_DIR}"
+        --dir "${HOME}"
+        --bind "${SCRATCH_DIR}" "${HOME}/workspace"
+        --tmpfs "${HOME}/.ssh"
+        --tmpfs "${HOME}/.gnupg"
+        --tmpfs "${HOME}/Pothi"
+        --chdir "${SCRATCH_DIR}"
+        --unshare-all
+        --share-net
+        --die-with-parent
+    )
+
+    case "${target}" in
+        python)
+            bwrap "${BWRAP_ARGS[@]}" python3
+            ;;
+        c)
+            echo "Entering C compiler environment in ${SCRATCH_DIR}"
+            bwrap "${BWRAP_ARGS[@]}" /bin/bash
+            ;;
+        web)
+            echo "Starting local lightweight web preview server on http://localhost:8000..."
+            bwrap "${BWRAP_ARGS[@]}" python3 -m http.server 8000
+            ;;
+        bash|*)
+            bwrap "${BWRAP_ARGS[@]}" /bin/bash
+            ;;
+    esac
+}
+
+case "${1:-launch}" in
+    launch)
+        shift
+        cmd_launch "${1:-bash}"
+        ;;
+    reset)
+        cmd_reset
+        ;;
+    snapshots)
+        cmd_snapshots
+        ;;
+    help|--help|-h)
+        show_help
+        ;;
+    *)
+        cmd_launch "$@"
+        ;;
+esac
