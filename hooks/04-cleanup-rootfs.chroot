@@ -13,6 +13,7 @@ apt-get autoremove --purge -y || true
 apt-get clean || true
 rm -rf /var/lib/apt/lists/*
 rm -rf /tmp/* /var/tmp/*
+rm -f /etc/apt/apt.conf.d/99noninteractive
 
 echo "🪵 [Hook 04] Truncating system log files..."
 if [[ -d /var/log ]]; then

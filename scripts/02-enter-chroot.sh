@@ -38,13 +38,22 @@ cleanup_mounts() {
 }
 trap cleanup_mounts EXIT INT TERM
 
-# 2. Ingest DNS and Host Resolution
-echo -e "${CLR_CYAN}Setting up chroot DNS resolution...${CLR_RESET}"
+# 2. Ingest DNS and Non-Interactive APT Configuration
+echo -e "${CLR_CYAN}Setting up chroot DNS resolution and noninteractive conffile policies...${CLR_RESET}"
 rm -f "${ROOTFS_DIR}/etc/resolv.conf"
 cat <<'EOF' > "${ROOTFS_DIR}/etc/resolv.conf"
 nameserver 1.1.1.1
 nameserver 8.8.8.8
 nameserver 1.0.0.1
+EOF
+
+mkdir -p "${ROOTFS_DIR}/etc/apt/apt.conf.d"
+cat << 'EOF' > "${ROOTFS_DIR}/etc/apt/apt.conf.d/99noninteractive"
+Dpkg::Options {
+   "--force-confdef";
+   "--force-confold";
+};
+APT::Get::Assume-Yes "true";
 EOF
 
 # 3. Stage Calamares configuration files inside chroot
