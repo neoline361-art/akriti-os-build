@@ -33,15 +33,32 @@ if [[ ! -f "${BASE_ISO_PATH}" ]]; then
     fi
 fi
 
+# Disable kernel hardlink protection for the remastering session
+sysctl -w fs.protected_hardlinks=0 2>/dev/null || true
+
 # 2. Mount and extract ISO filesystem
 MNT_ISO="$(mktemp -d /tmp/akriti-iso-mnt.XXXXXX)"
-cleanup() {
+MNT_LAYERS_DIR="$(mktemp -d /tmp/akriti-layers.XXXXXX)"
+MNT_MERGED="$(mktemp -d /tmp/akriti-merged.XXXXXX)"
+
+cleanup_all() {
+    if mountpoint -q "${MNT_MERGED}"; then
+        umount "${MNT_MERGED}" || true
+    fi
+    if [[ -d "${MNT_LAYERS_DIR}" ]]; then
+        for d in "${MNT_LAYERS_DIR}"/*; do
+            if mountpoint -q "$d"; then
+                umount "$d" || true
+            fi
+        done
+    fi
+    rm -rf "${MNT_MERGED}" "${MNT_LAYERS_DIR}"
     if mountpoint -q "${MNT_ISO}"; then
         umount "${MNT_ISO}" || true
     fi
     rm -rf "${MNT_ISO}"
 }
-trap cleanup EXIT INT TERM
+trap cleanup_all EXIT INT TERM
 
 echo -e "${CLR_CYAN}Mounting base ISO: ${BASE_ISO_PATH}...${CLR_RESET}"
 mount -o loop,ro "${BASE_ISO_PATH}" "${MNT_ISO}"
@@ -89,13 +106,36 @@ if [[ -z "${PRIMARY_SQUASH}" ]]; then
     OVERLAY_SQUASHES=("${SQUASHFS_FILES[@]:1}")
 fi
 
-echo -e "${CLR_CYAN}Unsquashing primary rootfs (${PRIMARY_SQUASH}) into ${ROOTFS_DIR}...${CLR_RESET}"
-unsquashfs -f -d "${ROOTFS_DIR}" "${PRIMARY_SQUASH}"
+if [[ ${#OVERLAY_SQUASHES[@]} -gt 0 ]]; then
+    echo -e "${CLR_CYAN}Mounting multi-layer SquashFS via Linux OverlayFS...${CLR_RESET}"
+    MNT_BASE="${MNT_LAYERS_DIR}/base"
+    mkdir -p "${MNT_BASE}"
+    mount -o loop,ro "${PRIMARY_SQUASH}" "${MNT_BASE}"
 
-# Unpack any auxiliary layers (live session tools, overlays) on top
-for ov in "${OVERLAY_SQUASHES[@]}"; do
-    echo -e "${CLR_CYAN}Unsquashing overlay layer (${ov}) into ${ROOTFS_DIR}...${CLR_RESET}"
-    unsquashfs -f -d "${ROOTFS_DIR}" "${ov}"
-done
+    LOWERDIRS=()
+    idx=0
+    for ov in "${OVERLAY_SQUASHES[@]}"; do
+        ov_dir="${MNT_LAYERS_DIR}/ov_${idx}"
+        mkdir -p "${ov_dir}"
+        mount -o loop,ro "${ov}" "${ov_dir}"
+        LOWERDIRS+=("${ov_dir}")
+        idx=$((idx + 1))
+    done
+    LOWERDIRS+=("${MNT_BASE}")
+
+    # Build lowerdir string: highest overlay layer first
+    LOWERDIR_STR=$(IFS=:; echo "${LOWERDIRS[*]}")
+
+    echo -e "${CLR_CYAN}Merging layers with OverlayFS (lowerdir=${LOWERDIR_STR})...${CLR_RESET}"
+    mount -t overlay overlay -o lowerdir="${LOWERDIR_STR}" "${MNT_MERGED}"
+
+    echo -e "${CLR_CYAN}Copying merged filesystem to ${ROOTFS_DIR}...${CLR_RESET}"
+    rsync -aH "${MNT_MERGED}/" "${ROOTFS_DIR}/"
+
+    umount "${MNT_MERGED}" || true
+else
+    echo -e "${CLR_CYAN}Extracting single SquashFS layer (${PRIMARY_SQUASH}) with unsquashfs...${CLR_RESET}"
+    unsquashfs -f -d "${ROOTFS_DIR}" "${PRIMARY_SQUASH}"
+fi
 
 echo -e "${CLR_GREEN}${CLR_BOLD}Stage 1 Extraction Complete!${CLR_RESET}"
