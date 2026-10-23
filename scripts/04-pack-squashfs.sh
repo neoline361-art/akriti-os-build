@@ -37,8 +37,8 @@ else
     echo -e "${CLR_COPPER}Development Build: Using fast ZSTD level ${COMP_LEVEL}...${CLR_RESET}"
 fi
 
-# 3. Remove old squashfs image
-rm -f "${CASPER_DIR}/filesystem.squashfs"
+# 3. Remove all old squashfs images in casper directory to avoid duplicate/stale layers
+rm -f "${CASPER_DIR}"/*.squashfs
 
 # 4. Pack Squashfs using ZSTD
 echo -e "${CLR_CYAN}Compressing RootFS with mksquashfs (ZSTD)...${CLR_RESET}"

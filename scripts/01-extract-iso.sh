@@ -49,22 +49,53 @@ mount -o loop,ro "${BASE_ISO_PATH}" "${MNT_ISO}"
 echo -e "${CLR_CYAN}Extracting ISO boot structure to: ${ISO_EXTRACT_DIR}...${CLR_RESET}"
 rm -rf "${ISO_EXTRACT_DIR}"
 mkdir -p "${ISO_EXTRACT_DIR}"
-# Copy everything except casper filesystem.squashfs first for speed
-rsync -a --exclude="casper/filesystem.squashfs" "${MNT_ISO}/" "${ISO_EXTRACT_DIR}/"
+# Copy ISO filesystem structure excluding all .squashfs files
+rsync -a --exclude="*.squashfs" "${MNT_ISO}/" "${ISO_EXTRACT_DIR}/"
 
-# 3. Extract Squashfs RootFS
-SQUASHFS_SOURCE=""
-if [[ -f "${MNT_ISO}/casper/filesystem.squashfs" ]]; then
-    SQUASHFS_SOURCE="${MNT_ISO}/casper/filesystem.squashfs"
-elif [[ -f "${MNT_ISO}/live/filesystem.squashfs" ]]; then
-    SQUASHFS_SOURCE="${MNT_ISO}/live/filesystem.squashfs"
-else
-    echo -e "${CLR_RED}Error: Could not locate filesystem.squashfs inside ISO.${CLR_RESET}" >&2
+# 3. Discover and Extract Squashfs RootFS layers
+echo -e "${CLR_CYAN}Discovering SquashFS layers inside mounted ISO...${CLR_RESET}"
+mapfile -t SQUASHFS_FILES < <(find "${MNT_ISO}" -type f -name "*.squashfs" | sort)
+
+if [[ ${#SQUASHFS_FILES[@]} -eq 0 ]]; then
+    echo -e "${CLR_RED}Error: Could not locate any .squashfs files inside ISO.${CLR_RESET}" >&2
     exit 1
 fi
 
-echo -e "${CLR_CYAN}Unsquashing rootfs (${SQUASHFS_SOURCE}) into ${ROOTFS_DIR}...${CLR_RESET}"
+echo -e "${CLR_COPPER}Found ${#SQUASHFS_FILES[@]} SquashFS file(s):${CLR_RESET}"
+for sq in "${SQUASHFS_FILES[@]}"; do
+    echo "  - $(basename "${sq}") ($(du -h "${sq}" | cut -f1))"
+done
+
+# Prepare clean ROOTFS_DIR
 rm -rf "${ROOTFS_DIR}"
-unsquashfs -d "${ROOTFS_DIR}" "${SQUASHFS_SOURCE}"
+mkdir -p "${ROOTFS_DIR}"
+
+# Categorize base rootfs vs overlay layers
+PRIMARY_SQUASH=""
+OVERLAY_SQUASHES=()
+
+for sq in "${SQUASHFS_FILES[@]}"; do
+    fname="$(basename "${sq}")"
+    if [[ "${fname}" == "filesystem.squashfs" || "${fname}" == "minimal.squashfs" || "${fname}" =~ minimal\.standard\.squashfs ]]; then
+        PRIMARY_SQUASH="${sq}"
+    else
+        OVERLAY_SQUASHES+=("${sq}")
+    fi
+done
+
+# If no named primary matched, pick the largest squashfs file
+if [[ -z "${PRIMARY_SQUASH}" ]]; then
+    PRIMARY_SQUASH="${SQUASHFS_FILES[0]}"
+    OVERLAY_SQUASHES=("${SQUASHFS_FILES[@]:1}")
+fi
+
+echo -e "${CLR_CYAN}Unsquashing primary rootfs (${PRIMARY_SQUASH}) into ${ROOTFS_DIR}...${CLR_RESET}"
+unsquashfs -f -d "${ROOTFS_DIR}" "${PRIMARY_SQUASH}"
+
+# Unpack any auxiliary layers (live session tools, overlays) on top
+for ov in "${OVERLAY_SQUASHES[@]}"; do
+    echo -e "${CLR_CYAN}Unsquashing overlay layer (${ov}) into ${ROOTFS_DIR}...${CLR_RESET}"
+    unsquashfs -f -d "${ROOTFS_DIR}" "${ov}"
+done
 
 echo -e "${CLR_GREEN}${CLR_BOLD}Stage 1 Extraction Complete!${CLR_RESET}"
