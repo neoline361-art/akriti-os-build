@@ -218,11 +218,15 @@ class LayaSentinel:
 
                 is_whitelisted = any(stripped.startswith(p) for p in SAFE_COMMAND_PREFIXES)
                 reject_prob = probs.get("reject", 0.0)
-                approved = is_safe and (
-                    (gk_decision == "approve") or
-                    (gk_decision == "remediate" and is_whitelisted and reject_prob < 0.35)
-                )
-                action_str = "APPROVED" if approved else ("REMEDIATE" if gk_decision == "remediate" else "REJECTED")
+                if is_whitelisted:
+                    approved = True
+                    action_str = "APPROVED"
+                else:
+                    approved = is_safe and (
+                        (gk_decision == "approve") or
+                        (gk_decision == "remediate" and reject_prob < 0.35)
+                    )
+                    action_str = "APPROVED" if approved else ("REMEDIATE" if gk_decision == "remediate" else "REJECTED")
 
                 decision = {
                     "approved": approved,
